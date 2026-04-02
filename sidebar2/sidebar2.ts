@@ -21,7 +21,6 @@ export interface FunctionNode {
 })
 export class Sidebar2Component implements OnInit, OnDestroy {
 
-  // --- Static function search indexes ---
   private static functionNodes: FunctionNode[] = [];
   private static nameIndex: Map<string, FunctionNode> | null = null;
   private static categoryIndex: Map<string, FunctionNode[]> | null = null;
@@ -74,9 +73,8 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     return Array.from(Sidebar2Component.categoryIndex!.keys());
   }
 
-  // --- Instance members ---
   @Output() itemSelected = new EventEmitter<{ section: string; label: string }>();
-  @Output() menuClickSidebar2 = new EventEmitter<{ section: string; label: string; description?: string; syntax?: string; category?: string }>(); // Emit the whole item object
+  @Output() menuClickSidebar2 = new EventEmitter<{ section: string; label: string; description?: string; syntax?: string; category?: string }>();
 
   selectedItem: { section: string; label: string } | null = null;
   selectedDescription: string = '';
@@ -94,7 +92,6 @@ export class Sidebar2Component implements OnInit, OnDestroy {
   private startWidth: number = 0;
   private subscriptions: Subscription[] = [];
 
-  // Dynamic categories built from backend data
   functionCategories: { name: string; icon: string; items: FunctionNode[] }[] = [];
 
   openSections: any = {
@@ -111,7 +108,6 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     private functionDataService: FunctionDataService
   ) {}
 
-  //This runs once when the sidebar first loads on screen.
   ngOnInit(): void {
     this.minWidth = 0;
     this.maxWidth = window.innerWidth * 0.30;
@@ -123,7 +119,6 @@ export class Sidebar2Component implements OnInit, OnDestroy {
       })
     );
 
-    // Fetch function data from backend
     this.subscriptions.push(
       this.functionDataService.getFunctions().subscribe({
         next: (nodes: FunctionNode[]) => {
@@ -159,14 +154,12 @@ export class Sidebar2Component implements OnInit, OnDestroy {
       items
     }));
 
-    // Build openSections.functions dynamically
     this.openSections.functions = { main: true };
     for (const cat of this.functionCategories) {
       this.openSections.functions[cat.name] = true;
     }
   }
 
-  /* ----- Child item click ----- */
   selectItem(section: string, label: string, event: MouseEvent): void {
     
     if (this.isLocked) {
@@ -176,14 +169,12 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     event.stopPropagation();
     this.selectedItem = { section, label };
 
-    // Look up sort_description for functions
     if (section === 'functions') {
       const fn = Sidebar2Component.findByName(label);
       if (fn) {
         this.selectedDescription = fn.sort_description;
         this.menuClickSidebar2.emit({ section, label, description: fn.sort_description, syntax: fn.syntax, category: fn.main_categori });
       } else {
-        // Fallback: label might be a category name — show its functions' descriptions
         const catFunctions = Sidebar2Component.findByCategory(label);
         if (catFunctions.length > 0) {
           this.selectedDescription = catFunctions.map(f => f.func_name).join(', ');
@@ -210,7 +201,6 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     return item.func_name;
   }
 
-  // Lookup helpers requested
   getFunctionByName(name: string): FunctionNode | null {
     return Sidebar2Component.findByName(name);
   }
@@ -219,19 +209,17 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     return Sidebar2Component.findByCategory(category);
   }
 
-  /* ----- Section toggle ----- */
   toggleSection(section: string): void {
     if (section === 'functions') {
       this.openSections.functions.main = !this.openSections.functions.main;
     } else if (section.startsWith('functions-')) {
-      const sub = section.substring(10); // 'functions-'.length
+      const sub = section.substring(10);
       this.openSections.functions[sub] = !this.openSections.functions[sub];
     } else {
       this.openSections[section] = !this.openSections[section];
     }
   }
 
-  /* ----- Sidebar open/close ----- */
   toggleSidebar(): void {
     this.isOpen = !this.isOpen;
     if (this.isOpen) {
@@ -241,13 +229,11 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     }
   }
 
-  /* ----- Heading 3-dot menu ----- */
   toggleHeadingMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.isHeadingMenuOpen = !this.isHeadingMenuOpen;
   }
 
-  /* ----- Close all sections ----- */
   closeAll(): void {
     this.openSections.projects = false;
     this.openSections.functions.main = false;
@@ -259,7 +245,6 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     this.isHeadingMenuOpen = false;
   }
 
-  /* ----- Open all sections ----- */
   openAll(): void {
     this.openSections.projects = true;
     this.openSections.functions.main = true;
@@ -271,24 +256,20 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     this.isHeadingMenuOpen = false;
   }
 
-  /* ----- Collapse all (alias for closeAll) ----- */
   collapseAll(): void {
     this.closeAll();
   }
 
-  /* ----- Expand all (alias for openAll) ----- */
   expandAll(): void {
     this.openAll();
   }
 
-  /* ----- Close sidebar from dropdown ----- */
   closeSidebar(): void {
     this.isOpen = false;
     this.currentWidth = 0;
     this.isHeadingMenuOpen = false;
   }
 
-  /* ----- Resize ----- */
   startResize(event: MouseEvent): void {
     this.isResizing = true;
     this.startX = event.clientX;

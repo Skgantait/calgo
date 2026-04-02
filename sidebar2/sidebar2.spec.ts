@@ -12,7 +12,7 @@ describe('Sidebar2Component', () => {
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(Sidebar2);
+    fixture = TestBed.createComponent(Sidebar2Component);
     component = fixture.componentInstance;
     await fixture.whenStable();
   });
