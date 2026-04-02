@@ -1,0 +1,215 @@
+﻿<aside
+  class="sidebar"
+  [class.sidebar--closed]="!isOpen"
+  [class.sidebar--resizing]="isResizing"
+  [style.width]="sidebarWidth"
+>
+
+  <!-- Explorer Heading -->
+  <div class="sidebar__heading">
+    <span class="sidebar__heading-text">EXPLORER</span>
+    <button class="sidebar__expand-all" (click)="expandAll()" title="Expand all sections">Expand All</button>
+    <button class="sidebar__collapse-all" (click)="collapseAll()" title="Collapse all sections">Collapse All</button>
+    <div class="sidebar__heading-menu" (click)="toggleHeadingMenu($event)">
+      <svg class="sidebar__heading-dots"
+           xmlns="http://www.w3.org/2000/svg"
+           width="28"
+           height="24"
+           viewBox="0 0 27 27"
+           fill="currentColor">
+        <circle cx="5" cy="15" r="3"/>
+        <circle cx="13" cy="15" r="3"/>
+        <circle cx="21" cy="15" r="3"/>
+      </svg>
+      <div class="sidebar__dropdown" *ngIf="isHeadingMenuOpen" (click)="$event.stopPropagation()">
+        <div class="sidebar__dropdown-item" (click)="closeAll()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          Close All
+        </div>
+        <div class="sidebar__dropdown-item" (click)="expandAll()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          Expand All
+        </div>
+        <div class="sidebar__dropdown-divider"></div>
+        <div class="sidebar__dropdown-item sidebar__dropdown-item--danger" (click)="closeSidebar()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Close Sidebar
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar Content -->
+  <div class="sidebar__content">
+    <div class="explorer-tree">
+
+      <!-- PROJECTS -->
+      <div class="tree-item" [class.tree-item--open]="openSections['projects']" (click)="toggleSection('projects')">
+        <svg class="tree-item__arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="tree-item__label">PROJECTS</span>
+      </div>
+      <div class="tree-item__children" *ngIf="openSections['projects']">
+        <div class="tree-child"
+             [class.tree-child--active]="isItemSelected('projects', 'project-1')"
+             (click)="selectItem('projects', 'project-1', $event)">project-1</div>
+        <div class="tree-child"
+             [class.tree-child--active]="isItemSelected('projects', 'project-2')"
+             (click)="selectItem('projects', 'project-2', $event)">project-2</div>
+      </div>
+
+      <!-- FUNCTIONS (dynamic from backend, with hardcoded fallback) -->
+      <div class="tree-item" [class.tree-item--open]="openSections.functions.main" (click)="toggleSection('functions')">
+        <svg class="tree-item__arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="tree-item__label">FUNCTIONS</span>
+        <span class="tree-item__badge" *ngIf="isLoading">Loading...</span>
+      </div>
+      <div class="tree-item__children" *ngIf="openSections.functions.main">
+
+        <!-- Dynamic categories from backend -->
+        <ng-container *ngIf="functionCategories.length > 0">
+          <ng-container *ngFor="let cat of functionCategories; trackBy: trackByCategory">
+            <div class="tree-item tree-item--sub"
+                 [class.tree-item--open]="openSections.functions[cat.name]"
+                 (click)="toggleSection('functions-' + cat.name)">
+              <svg class="tree-item__arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+              <img [src]="cat.icon" width="14" height="14" [title]="cat.name"><span>{{ cat.name }}</span>
+            </div>
+            <div class="tree-item__children tree-item__children--sub" *ngIf="openSections.functions[cat.name]">
+              <div class="tree-child"
+                   *ngFor="let item of cat.items; trackBy: trackByItem"
+                   [class.tree-child--active]="isItemSelected('functions', item.func_name)"
+                   (click)="selectItem('functions', item.func_name, $event)">
+                <span>{{ item.func_name }}</span>
+              </div>
+            </div>
+          </ng-container>
+        </ng-container>
+
+        <!-- Hardcoded fallback (shown while loading or if backend returns no data) -->
+        <ng-container *ngIf="functionCategories.length === 0">
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Syntax')" (click)="selectItem('functions', 'Syntax', $event)">
+            <img src="func/syntax2.png" width="14" height="14" title="Syntax"><span>Syntax</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'IO')" (click)="selectItem('functions', 'IO', $event)">
+            <img src="func/IO2.png" width="14" height="14" title="IO"><span>IO</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Binary & Memory')" (click)="selectItem('functions', 'Binary & Memory', $event)">
+            <img src="func/bin2.png" width="14" height="14" title="Binary & Memory"><span>Binary & Memory</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'System Info')" (click)="selectItem('functions', 'System Info', $event)">
+            <img src="func/sys2.png" width="14" height="14" title="System Info"><span>System Info</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Files & Folders')" (click)="selectItem('functions', 'Files & Folders', $event)">
+            <img src="func/filefolder2.png" width="14" height="14" title="File & Folder"><span>Files & Folders</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'String')" (click)="selectItem('functions', 'String', $event)">
+            <img src="func/str2.png" width="14" height="14" title="String"><span>String</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Date & Time')" (click)="selectItem('functions', 'Date & Time', $event)">
+            <img src="func/dt2.png" width="14" height="14" title="Date & Time"><span>Date & Time</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Table & Field')" (click)="selectItem('functions', 'Table & Field', $event)">
+            <img src="func/table2.png" width="14" height="14" title="Table & Field"><span>Table & Field</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Matrix Operation')" (click)="selectItem('functions', 'Matrix Operation', $event)">
+            <img src="func/mtrx2.png" width="14" height="14" title="Matrix Operation"><span>Matrix Operation</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Mathematics')" (click)="selectItem('functions', 'Mathematics', $event)">
+            <img src="func/sfun2.png" width="14" height="14" title="Mathematics"><span>Mathematics</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Linear Algebra')" (click)="selectItem('functions', 'Linear Algebra', $event)">
+            <img src="func/algb2.png" width="14" height="14" title="Linear Algebra"><span>Linear Algebra</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Geometry')" (click)="selectItem('functions', 'Geometry', $event)">
+            <img src="func/geom2.png" width="14" height="14" title="Geometry"><span>Geometry</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Integration')" (click)="selectItem('functions', 'Integration', $event)">
+            <img src="func/int2.png" width="14" height="14" title="Integration"><span>Integration</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Polynomial & BSpline')" (click)="selectItem('functions', 'Polynomial & BSpline', $event)">
+            <img src="func/poly2.png" width="14" height="14" title="Polynomial & BSpline"><span>Polynomial & BSpline</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Optimization & Equation Solver')" (click)="selectItem('functions', 'Optimization & Equation Solver', $event)">
+            <img src="func/optm2.png" width="14" height="14" title="Optimization & Equation Solver"><span>Optimization & Equation Solver</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Data Function')" (click)="selectItem('functions', 'Data Function', $event)">
+            <img src="func/datafun2.png" width="14" height="14" title="Data Function"><span>Data Function</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Statistics')" (click)="selectItem('functions', 'Statistics', $event)">
+            <img src="func/stat2.png" width="14" height="14" title="Statistics"><span>Statistics</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Regression')" (click)="selectItem('functions', 'Regression', $event)">
+            <img src="func/reg2.png" width="14" height="14" title="Regression"><span>Regression</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Machine Learning')" (click)="selectItem('functions', 'Machine Learning', $event)">
+            <img src="func/ml2.png" width="14" height="14" title="Machine Learning"><span>Machine Learning</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Finance')" (click)="selectItem('functions', 'Finance', $event)">
+            <img src="func/fin2.png" width="14" height="14" title="Finance"><span>Finance</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Signal Processing')" (click)="selectItem('functions', 'Signal Processing', $event)">
+            <img src="func/sign2.png" width="14" height="14" title="Signal Processing"><span>Signal Processing</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Image Processing')" (click)="selectItem('functions', 'Image Processing', $event)">
+            <img src="func/Image2.png" width="14" height="14" title="Image Processing"><span>Image Processing</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Database Functions')" (click)="selectItem('functions', 'Database Functions', $event)">
+            <img src="func/db2.png" width="14" height="14" title="Database Functions"><span>Database Functions</span>
+          </div>
+          <div class="tree-child" [class.tree-child--active]="isItemSelected('functions', 'Others')" (click)="selectItem('functions', 'Others', $event)">
+            <img src="func/others2.png" width="14" height="14" title="Others"><span>Others</span>
+          </div>
+        </ng-container>
+
+      </div>
+
+      <!-- USER FUNCTION -->
+      <div class="tree-item" [class.tree-item--open]="openSections['userFunction']" (click)="toggleSection('userFunction')">
+        <svg class="tree-item__arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="tree-item__label">USER FUNCTION</span>
+      </div>
+      <div class="tree-item__children" *ngIf="openSections['userFunction']">
+        <div class="tree-child"
+             [class.tree-child--active]="isItemSelected('userFunction', 'user-fn-1')"
+             (click)="selectItem('userFunction', 'user-fn-1', $event)">user-fn-1</div>
+        <div class="tree-child"
+             [class.tree-child--active]="isItemSelected('userFunction', 'user-fn-2')"
+             (click)="selectItem('userFunction', 'user-fn-2', $event)">user-fn-2</div>
+      </div>
+
+      <!-- OBJECT -->
+      <div class="tree-item" [class.tree-item--open]="openSections['object']" (click)="toggleSection('object')">
+        <svg class="tree-item__arrow" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="tree-item__label">OBJECT</span>
+      </div>
+      <div class="tree-item__children" *ngIf="openSections['object']">
+        <div class="tree-child"
+             [class.tree-child--active]="isItemSelected('object', 'object-1')"
+             (click)="selectItem('object', 'object-1', $event)">object-1</div>
+        <div class="tree-child"
+             [class.tree-child--active]="isItemSelected('object', 'object-2')"
+             (click)="selectItem('object', 'object-2', $event)">object-2</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Description Panel -->
+  <div class="sidebar__description" *ngIf="selectedDescription">
+    <span class="sidebar__description-text">{{ selectedDescription }}</span>
+  </div>
+
+  <!-- Resize Handle -->
+  <div class="sidebar__resize-handle" (mousedown)="startResize($event)"></div>
+
+</aside>
