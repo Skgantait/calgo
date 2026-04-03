@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Sidebar2Component } from '../../sidebar2/sidebar2';
-import { FunctionDataService } from '../../sidebar2/function-data.service';
+import { Sidebar2Component } from '../../sidebar2';
+import { FunctionDataService } from '../../function-data.service';
 
 @Component({
   selector: 'app-root',

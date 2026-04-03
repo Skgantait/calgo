@@ -6,25 +6,25 @@
     "sidebar2": {
       "projectType": "application",
       "root": "",
-      "sourceRoot": "src",
+      "sourceRoot": "sidebar2/src",
       "prefix": "app",
       "architect": {
         "build": {
           "builder": "@angular-devkit/build-angular:application",
           "options": {
             "outputPath": "dist/sidebar2",
-            "index": "src/index.html",
-            "browser": "src/main.ts",
+            "index": "sidebar2/src/index.html",
+            "browser": "sidebar2/src/main.ts",
             "tsConfig": "tsconfig.app.json",
             "assets": [
               {
                 "glob": "**/*",
-                "input": "src/assets",
+                "input": "sidebar2/src/assets",
                 "output": "assets"
               }
             ],
             "styles": [
-              "src/styles.css"
+              "sidebar2/src/styles.css"
             ],
             "scripts": []
           },

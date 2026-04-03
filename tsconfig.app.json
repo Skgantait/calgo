@@ -4,7 +4,7 @@
     "outDir": "./out-tsc/app",
     "types": []
   },
-  "files": ["src/main.ts"],
-  "include": ["src/**/*.d.ts", "src/**/*.ts", "sidebar2/**/*.ts"],
+  "files": ["sidebar2/src/main.ts"],
+  "include": ["sidebar2/src/**/*.d.ts", "sidebar2/src/**/*.ts", "sidebar2/**/*.ts"],
   "exclude": ["sidebar2/**/*.spec.ts"]
 }

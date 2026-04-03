@@ -21,10 +21,12 @@ export interface FunctionNode {
 })
 export class Sidebar2Component implements OnInit, OnDestroy {
 
+  // Static in-memory cache — shared across all instances to avoid reprocessing
   private static functionNodes: FunctionNode[] = [];
-  private static nameIndex: Map<string, FunctionNode> | null = null;
-  private static categoryIndex: Map<string, FunctionNode[]> | null = null;
+  private static nameIndex: Map<string, FunctionNode> | null = null;       // O(1) lookup by name
+  private static categoryIndex: Map<string, FunctionNode[]> | null = null; // O(1) lookup by category
 
+  // Lazy-builds name + category indexes from functionNodes (runs once)
   private static buildIndexes(): void {
     if (Sidebar2Component.nameIndex) return;
     Sidebar2Component.nameIndex = new Map<string, FunctionNode>();
@@ -43,17 +45,20 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     }
   }
 
+  // Forces a full index rebuild — called when data changes
   private static rebuildIndexes(): void {
     Sidebar2Component.nameIndex = null;
     Sidebar2Component.categoryIndex = null;
     Sidebar2Component.buildIndexes();
   }
 
+  // Replaces the function list and rebuilds indexes
   static loadFunctions(data: FunctionNode[]): void {
     Sidebar2Component.functionNodes = data;
     Sidebar2Component.rebuildIndexes();
   }
 
+  // Case-insensitive lookup by function name
   static findByName(name: string): FunctionNode | null {
     const normalized = name?.trim().toLowerCase();
     if (!normalized) return null;
@@ -61,6 +66,7 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     return Sidebar2Component.nameIndex!.get(normalized) ?? null;
   }
 
+  // Returns all functions in a category (case-insensitive)
   static findByCategory(category: string): FunctionNode[] {
     const normalized = category?.trim().toLowerCase();
     if (!normalized) return [];
@@ -68,20 +74,13 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     return Sidebar2Component.categoryIndex!.get(normalized) ?? [];
   }
 
-  static getCategories(): string[] {
-    Sidebar2Component.buildIndexes();
-    return Array.from(Sidebar2Component.categoryIndex!.keys());
-  }
-
-  @Output() itemSelected = new EventEmitter<{ section: string; label: string }>();
+  // Emits clicked item details to parent (app.component listens to this)
   @Output() menuClickSidebar2 = new EventEmitter<{ section: string; label: string; description?: string; syntax?: string; category?: string }>();
 
   selectedItem: { section: string; label: string } | null = null;
   selectedDescription: string = '';
-
   minWidth: number = 0;
   maxWidth: number = 0;
-
   isOpen: boolean = true;
   isResizing: boolean = false;
   currentWidth: number = 0;
@@ -92,8 +91,10 @@ export class Sidebar2Component implements OnInit, OnDestroy {
   private startWidth: number = 0;
   private subscriptions: Subscription[] = [];
 
+  // Drives the template's *ngFor — each entry is a collapsible category section
   functionCategories: { name: string; icon: string; items: FunctionNode[] }[] = [];
 
+  // Tracks expanded/collapsed state; "functions" is nested (main + sub-categories)
   openSections: any = {
     projects: false,
     functions: { main: false },
@@ -101,6 +102,7 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     object: true
   };
 
+  // Blocks clicks when engine is busy
   isLocked: boolean = false;
 
   constructor(
@@ -108,6 +110,7 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     private functionDataService: FunctionDataService
   ) {}
 
+  // Sets initial width, subscribes to engine status, fetches function data
   ngOnInit(): void {
     this.minWidth = 0;
     this.maxWidth = window.innerWidth * 0.30;
@@ -134,10 +137,12 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     );
   }
 
+  // Cleans up subscriptions to prevent memory leaks
   ngOnDestroy(): void {
     this.subscriptions.forEach(s => s.unsubscribe());
   }
 
+  // Groups flat function list into categories for the template, auto-expands all
   private buildDynamicSections(nodes: FunctionNode[]): void {
     const categoryMap = new Map<string, FunctionNode[]>();
     for (const node of nodes) {
@@ -160,8 +165,8 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     }
   }
 
+  // Handles sidebar item click — blocks if engine busy, looks up by name then category, emits to parent
   selectItem(section: string, label: string, event: MouseEvent): void {
-    
     if (this.isLocked) {
       alert("Please wait. CALGORIC is processing a heavy workflow.");
       return;
@@ -189,10 +194,12 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     }
   }
 
+  // Used in template for active item highlighting
   isItemSelected(section: string, label: string): boolean {
     return this.selectedItem?.section === section && this.selectedItem?.label === label;
   }
 
+  // trackBy functions — helps Angular reuse DOM elements in *ngFor
   trackByCategory(index: number, cat: { name: string }): string {
     return cat.name;
   }
@@ -201,14 +208,7 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     return item.func_name;
   }
 
-  getFunctionByName(name: string): FunctionNode | null {
-    return Sidebar2Component.findByName(name);
-  }
-
-  getFunctionsByCategory(category: string): FunctionNode[] {
-    return Sidebar2Component.findByCategory(category);
-  }
-
+  // Toggles a section: "functions" = main, "functions-X" = sub-category, else top-level
   toggleSection(section: string): void {
     if (section === 'functions') {
       this.openSections.functions.main = !this.openSections.functions.main;
@@ -220,15 +220,7 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     }
   }
 
-  toggleSidebar(): void {
-    this.isOpen = !this.isOpen;
-    if (this.isOpen) {
-      this.currentWidth = window.innerWidth * 0.15;
-    } else {
-      this.currentWidth = 0;
-    }
-  }
-
+  // stopPropagation prevents onDocumentClick from closing it immediately
   toggleHeadingMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.isHeadingMenuOpen = !this.isHeadingMenuOpen;
@@ -256,6 +248,7 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     this.isHeadingMenuOpen = false;
   }
 
+  // Template calls these — they just delegate to closeAll/openAll
   collapseAll(): void {
     this.closeAll();
   }
@@ -270,6 +263,7 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     this.isHeadingMenuOpen = false;
   }
 
+  // Records drag start position for resize calculation
   startResize(event: MouseEvent): void {
     this.isResizing = true;
     this.startX = event.clientX;
@@ -277,6 +271,7 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     event.preventDefault();
   }
 
+  // Calculates new width from mouse delta, clamped to 0–30% of window
   @HostListener('document:mousemove', ['$event'])
   onMouseMove(event: MouseEvent): void {
     if (!this.isResizing) return;
@@ -297,11 +292,13 @@ export class Sidebar2Component implements OnInit, OnDestroy {
     this.isResizing = false;
   }
 
+  // Closes heading dropdown when clicking anywhere outside it
   @HostListener('document:click')
   onDocumentClick(): void {
     this.isHeadingMenuOpen = false;
   }
 
+  // Template binds this to [style.width]
   get sidebarWidth(): string {
     return `${this.currentWidth}px`;
   }
